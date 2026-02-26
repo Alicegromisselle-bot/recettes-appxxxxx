@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CookBook Pro Max</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root {
+--bg:#f3ede7;
+--card:#ffffff;
+--accent:#c4a484;
+--text:#3d3026;
+}
+
+body.dark {
+--bg:#1e1e1e;
+--card:#2a2a2a;
+--text:#f5f5f5;
+}
+
+body {
+font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+background:var(--bg);
+color:var(--text);
+margin:0;
+padding:20px;
+transition:0.3s;
+}
+
+h1{text-align:center;}
+
+.container{max-width:1000px;margin:auto;}
+
+.tabs{
+display:flex;
+gap:10px;
+margin-bottom:15px;
+}
+
+.tab{
+flex:1;
+padding:10px;
+background:var(--card);
+border-radius:12px;
+text-align:center;
+cursor:pointer;
+}
+
+.active{background:var(--accent);color:white;}
+
+.card{
+background:var(--card);
+padding:20px;
+border-radius:20px;
+margin-bottom:20px;
+}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+margin-top:8px;
+border-radius:10px;
+border:none;
+}
+
+button{
+margin-top:10px;
+padding:10px;
+border:none;
+border-radius:12px;
+background:var(--accent);
+color:white;
+cursor:pointer;
+}
+
+.recipe-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+gap:20px;
+}
+
+.recipe{
+background:var(--card);
+padding:15px;
+border-radius:20px;
+}
+
+.badge{
+background:#e8dfd5;
+padding:4px 8px;
+border-radius:8px;
+font-size:12px;
+margin-right:5px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="topbar">
+<h1>🍳 CookBook</h1>
+<button onclick="toggleDark()">🌙</button>
+</div>
+
+<div class="tabs">
+<div class="tab active" onclick="switchTab('all')">Catalogue</div>
+<div class="tab" onclick="switchTab('fav')">Favoris</div>
+</div>
+
+<div class="card">
+<input id="title" placeholder="Nom recette">
+<input id="time" placeholder="Temps">
+<select id="category">
+<option>Dessert</option>
+<option>Plat</option>
+<option>Entrée</option>
+<option>Healthy</option>
+</select>
+<textarea id="steps" placeholder="Étapes"></textarea>
+<button onclick="addRecipe()">Ajouter</button>
+</div>
+
+<input id="search" placeholder="🔎 Rechercher..." oninput="displayRecipes()">
+
+<div class="recipe-grid" id="recipes"></div>
+
+</div>
+
+<script>
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('sw.js');
+}
+
+let recipes=JSON.parse(localStorage.getItem("recipes"))||[];
+let currentTab="all";
+
+function save(){
+localStorage.setItem("recipes",JSON.stringify(recipes));
+}
+
+function addRecipe(){
+let title=document.getElementById("title").value;
+let time=document.getElementById("time").value;
+let category=document.getElementById("category").value;
+let steps=document.getElementById("steps").value;
+if(!title)return;
+recipes.push({title,time,category,steps,favorite:false});
+save();
+displayRecipes();
+}
+
+function toggleFav(i){
+recipes[i].favorite=!recipes[i].favorite;
+save();
+displayRecipes();
+}
+
+function deleteRecipe(i){
+recipes.splice(i,1);
+save();
+displayRecipes();
+}
+
+function switchTab(tab){
+currentTab=tab;
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+event.target.classList.add("active");
+displayRecipes();
+}
+
+function toggleDark(){
+document.body.classList.toggle("dark");
+}
+
+function displayRecipes(){
+let container=document.getElementById("recipes");
+let search=document.getElementById("search").value.toLowerCase();
+container.innerHTML="";
+
+recipes
+.filter(r=>r.title.toLowerCase().includes(search))
+.filter(r=>currentTab==="all"||r.favorite)
+.forEach((r,i)=>{
+container.innerHTML+=`
+<div class="recipe">
+<h3>${r.title}</h3>
+<span class="badge">${r.time}</span>
+<span class="badge">${r.category}</span>
+<p>${r.steps}</p>
+<button onclick="toggleFav(${i})">${r.favorite?"❤️":"🤍"}</button>
+<button onclick="deleteRecipe(${i})">Supprimer</button>
+</div>
+`;
+});
+}
+
+displayRecipes();
+</script>
+
+</body>
+</html>
